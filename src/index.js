@@ -10,6 +10,9 @@ const figlet = promisify(require('figlet'))
 const clear = require('clear')
 const chalk = require('chalk')
 const ora = require('ora')
+
+const handlebars = require('handlebars') // 模板
+
 // 绿色字体打印
 const logGreen = (content) => {
     console.log(chalk.green(content))
@@ -34,8 +37,9 @@ program.command('init <iceFileName>')
     .action(async (name) => {
         clear()
         const welcomeMsg = await figlet(WELCOME_MSG)
-        const filePath = path.resolve(__dirname, '..', name)
-        const clientPath = filePath.replace('.ice', '.js')
+        const filePath = path.resolve(__dirname, '../input', name)
+        let clientPath = path.resolve(__dirname, '../output', name)
+        clientPath = clientPath.replace('.ice', '.js')
         logGreen(welcomeMsg)
         if (fs.existsSync(filePath)) {
             const process_ora = ora(`${BEGIN_READ_FILE}${name}`)
@@ -44,7 +48,8 @@ program.command('init <iceFileName>')
             process_ora.succeed()
             logGreen(READ_FINISH)
             const fileDealData = fileDealFunc(fileContent)
-            fs.writeFileSync(clientPath, fileDealData)
+            fs.writeFileSync(clientPath,fileDealData)
+            renderClientJS(clientPath)
         } else {
             logRed(NOT_FIND_FILE)
         }
@@ -64,4 +69,38 @@ const fileDealFunc = (fileContent) => {
     }
     strArr = JSON.stringify(strArr,null,'\t')
     return strArr
+}
+// 渲染client.js 模板
+const renderClientJS =  (clientPath) =>{
+    const fileData = fs.readFileSync(clientPath).toString();
+    const CLIENT_TEMPLATE = path.resolve(__dirname,'../input/template/Client.js.hbs')
+    compile({
+        methodsArr:fileData
+    },clientPath,CLIENT_TEMPLATE)
+}
+
+// 编译
+/**
+* @param {Object}  meta-数据定义
+* @param {String}  filePath-目标文件路径
+* @param {String}  templatePath-模板文件路径
+* @return {void}
+*/
+const compile = (meta,filePath,templatePath) =>{
+    const filename = splitPath(filePath);
+    const templateName = splitPath(templatePath);
+    const FILEPATH = filePath.replace(filename,templateName)
+    if(fs.existsSync(templatePath)){
+        const content = fs.readFileSync(templatePath).toString()
+        
+        const result = handlebars.compile(content)(meta)
+        fs.writeFileSync(FILEPATH, result);
+    }
+    
+}
+splitPath = (path) =>{
+    const a = path.split('.js')[0]
+    const b = a.indexOf("/") !== -1 ? a.split('/'):a.split("\\");
+    const c = b[b.length - 1];
+    return c
 }
