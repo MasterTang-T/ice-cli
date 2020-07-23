@@ -9,7 +9,7 @@ const path = require('path')
 const figlet = promisify(require('figlet'))
 const clear = require('clear')
 const chalk = require('chalk')
-const ora = require('ora')
+const ora = require('ora') // 进度条
 
 const handlebars = require('handlebars') // 模板
 
@@ -21,7 +21,7 @@ const logGreen = (content) => {
 const logYellow = (content) => {
     console.log(chalk.yellow(content))
 }
-// 
+// 红色字体打印
 const logRed = (content) => {
     console.log(chalk.redBright(content))
 }
@@ -55,10 +55,8 @@ program.command('init <iceFileName>')
             logRed(NOT_FIND_FILE)
         }
     })
-
-
 program.parse(process.argv)
-
+// 处理读取到的ice文件内容
 const fileDealFunc = (fileContent) => {
     let newFileContentArr = []
     newFileContentArr = fileContent.split('void')
@@ -118,8 +116,8 @@ const compile = (meta, filePath, templatePath) => {
         const result = handlebars.compile(content)(meta)
         fs.writeFileSync(FILEPATH, result);
     }
-
 }
+// 分割路径
 splitPath = (path) => {
     const a =path.indexOf('.js') == -1? path.split('.json')[0]:path.split('.js')[0];
     const b = a.indexOf("/") !== -1 ? a.split('/') : a.split("\\");
